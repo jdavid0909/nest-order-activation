@@ -1,16 +1,81 @@
-import { Body, Controller, Post, Res } from '@nestjs/common';
+import { Body, Controller, Header, Headers, ParseIntPipe, Post, Res } from '@nestjs/common';
 import { AppService } from './app.service';
 import { RootDto } from './dto/order.activation.dto';
+import { ValidationError, validateOrReject } from 'class-validator';
+import { plainToClass } from 'class-transformer';
+import { Utils } from './utils/utils';
 
+
+import { v4 as uuid } from "uuid";
 @Controller('orders')
 export class AppController {
   constructor(private readonly appService: AppService) { }
 
+
+  private utils: Utils = new Utils();
+
+
   @Post()
-  postOrderActivation(@Res() res, @Body() body: RootDto) {
+  async postOrderActivation(@Res() res,
+    @Headers('crmSystem') crmSystem: string,
+    @Headers('consumer') consumer: string,
+    @Body() body: RootDto) {
 
-    return this.appService.logicService(res, body);
 
-    
+    const uti = uuid();
+
+    console.log(crmSystem);
+
+
+    try {
+
+
+      this.utils.ValidHeaderStringAndEmpy(res, uti,
+        {
+          clave: 'crmSystem',
+          valor: crmSystem
+        },
+        {
+          clave: 'consumer',
+          valor: consumer
+        });
+
+
+      const rootDto: RootDto = plainToClass(RootDto, body);
+      await validateOrReject(rootDto, { skipMissingProperties: false });
+
+
+
+
+      return await this.appService.logicService(res, body,crmSystem,uti);
+
+
+
+    } catch (error) {
+
+      console.log(error);
+
+
+
+      if (error instanceof Array && error.every(err => err instanceof ValidationError)) {
+
+        const validationErrors = this.utils.extractValidationErrors(error);
+
+        return res.status(400).json({
+          generalResponse: {
+            uti: uti,
+            status: "ERROR",
+            code: "601",
+            message: `Error ${validationErrors[0].constraints.split(" ")[0]} Invalid Data`
+          }
+        });
+      } else {
+        return res.status(500).json({ message: 'Error interno del servidor' });
+      }
+    }
+
+
+
+
   }
 }
