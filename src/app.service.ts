@@ -10,6 +10,7 @@ import { Model } from 'mongoose';
 import { ServiceTran } from './schema/services.trans.schema';
 import { ServiceSku } from './schema/services.sku';
 import { KafkaService } from './kafka/consumer.service';
+import { logging } from 'npm-logging-ts';
 
 @Injectable()
 export class AppService {
@@ -38,19 +39,12 @@ export class AppService {
 
     try {
 
-
       const { skusymph } = await this.serviceSku.findOne({ offerid: +offerId })
-
-
 
       const registre = await this.serviceTrans.findOne({
         $and: [{ unit: crmSystem }, { subscriber: subscriber },
         { offerId: offerId }, { typeTrans: 'IN PROGRESS' }, { status: 1 }]
       });
-
-
-
-
 
       if (registre == null) {
 
@@ -73,7 +67,6 @@ export class AppService {
           }
 
           const serviceTransSave = await new this.serviceTrans(data);
-
 
           await serviceTransSave.save();
 
@@ -157,7 +150,6 @@ export class AppService {
 
           }
 
-
           const data = {
 
             subscriber: subscriber,
@@ -199,6 +191,19 @@ export class AppService {
 
 
         } else {
+
+          logging.business(
+            'Order Activation',
+            'Error al consumir Order Activation',
+            {
+              generalResponse: {
+                uti: uti,
+                status: "ERROR",
+                code: "601",
+                message: `Error action Invalid Data`
+              }
+            },
+          );
           return res.status(400).json({
             generalResponse: {
               uti: uti,
@@ -209,8 +214,21 @@ export class AppService {
           });
         }
 
+        logging.business(
+          'Order Activation',
+          'Success al consumir Order Activation',
+          {
+            generalResponse: {
+              uti: uti,
+              status: "OK",
+              code: "01",
+              message: `Service Complete`
+            }
+          },
+        );
 
-        return res.status(400).json({
+
+        return res.status(200).json({
           generalResponse: {
             uti: uti,
             status: "OK",
@@ -232,10 +250,6 @@ export class AppService {
         });
 
       }
-
-
-
-
 
     } catch (error) {
 

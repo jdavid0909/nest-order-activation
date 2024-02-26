@@ -1,4 +1,4 @@
-import { Body, Controller, Header, Headers, ParseIntPipe, Post, Res } from '@nestjs/common';
+import { Body, Controller, Header, Headers, Logger, ParseIntPipe, Post, Res } from '@nestjs/common';
 import { AppService } from './app.service';
 import { RootDto } from './dto/order.activation.dto';
 import { ValidationError, validateOrReject } from 'class-validator';
@@ -7,13 +7,17 @@ import { Utils } from './utils/utils';
 
 
 import { v4 as uuid } from "uuid";
+import { logging } from 'npm-logging-ts';
 @Controller('orders')
 export class AppController {
+
+
+  private logger = new Logger('AppController');
+
   constructor(private readonly appService: AppService) { }
 
 
   private utils: Utils = new Utils();
-
 
   @Post()
   async postOrderActivation(@Res() res,
@@ -21,14 +25,9 @@ export class AppController {
     @Headers('consumer') consumer: string,
     @Body() body: RootDto) {
 
-
     const uti = uuid();
 
-    console.log(crmSystem);
-
-
     try {
-
 
       this.utils.ValidHeaderStringAndEmpy(res, uti,
         {
@@ -40,22 +39,16 @@ export class AppController {
           valor: consumer
         });
 
-
       const rootDto: RootDto = plainToClass(RootDto, body);
       await validateOrReject(rootDto, { skipMissingProperties: false });
 
+      const service = await this.appService.logicService(res, body,crmSystem,uti);
 
-
-
-      return await this.appService.logicService(res, body,crmSystem,uti);
-
-
+      return service
 
     } catch (error) {
 
-      console.log(error);
-
-
+      this.logger.error(error)
 
       if (error instanceof Array && error.every(err => err instanceof ValidationError)) {
 
@@ -73,9 +66,6 @@ export class AppController {
         return res.status(500).json({ message: 'Error interno del servidor' });
       }
     }
-
-
-
 
   }
 }

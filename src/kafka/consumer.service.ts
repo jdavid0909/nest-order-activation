@@ -1,7 +1,7 @@
 // src/kafka.service.ts
 import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { Response } from 'express';
-import { Kafka, Producer, Consumer } from 'kafkajs';
+import { Kafka, Producer, Consumer, Partitioners } from 'kafkajs';
 
 
 @Injectable()
@@ -18,7 +18,7 @@ export class KafkaService implements OnModuleInit, OnModuleDestroy {
             brokers: ['localhost:9092'], // Cambia a la dirección y el puerto de tu servidor Kafka
         });
 
-        this.producer = this.kafka.producer();
+        this.producer = this.kafka.producer({ createPartitioner: Partitioners.LegacyPartitioner });
         this.consumer = this.kafka.consumer({ groupId: 'nestjs-group' });
     }
 

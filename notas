@@ -1,0 +1,17 @@
+--inicar terminarl 
+docker exec -it kafka-broker-1 bash
+
+
+--comando para crear un topico en kafka
+kafka-topics --bootstrap-server kafka-broker-1:9092 --create --topic test
+Created topic test
+
+--comando para producir en kafka
+kafka-console-producer --bootstrap-server kafka-broker-1:9092 --topic test
+
+--comando para consumir en kafka
+kafka-console-consumer --bootstrap-server kafka-broker-1:9092 --topic test
+
+
+--comando para el docker 
+docker exec -it e31bdc24fd9d kafka-console-consumer --bootstrap-server localhost:9092 --topic test --from-beginning
